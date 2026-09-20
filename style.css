@@ -1,0 +1,602 @@
+/* ==========================================================
+   通信のしくみを体験する ― IPアドレスとネットワーク教材
+   デザイントークン：白〜薄グレー基調 / ネイビー・ブルー・シアン
+   ========================================================== */
+
+:root{
+  /* --- カラー --- */
+  --bg: #F7F9FB;
+  --surface: #FFFFFF;
+  --surface-muted: #F0F3F7;
+  --border: #DCE3EA;
+  --border-strong: #C3CDD8;
+
+  --navy: #1B2A4A;
+  --navy-soft: #33456B;
+  --blue: #2F6FED;
+  --blue-soft: #E7EFFE;
+  --cyan: #17B8C4;
+  --cyan-soft: #E3F8FA;
+
+  --text: #1F2933;
+  --text-muted: #5B6B7C;
+  --text-faint: #94A3B3;
+
+  --success: #1E8E5A;
+  --success-soft: #E5F5ED;
+  --error: #D64545;
+  --error-soft: #FBEAEA;
+
+  --radius-lg: 16px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+  --shadow-card: 0 1px 3px rgba(20,30,50,0.07), 0 1px 2px rgba(20,30,50,0.04);
+}
+
+*{ box-sizing: border-box; }
+
+html, body{
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Noto Sans JP", "Hiragino Sans", "Yu Gothic", sans-serif;
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+h1, h2, h3{
+  margin: 0;
+  color: var(--navy);
+  font-weight: 700;
+}
+
+button{
+  font-family: inherit;
+}
+
+/* ================= ヘッダー ================= */
+.app-header{
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 18px 32px;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+.app-header__inner{
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.app-header__eyebrow{
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--blue);
+  background: var(--blue-soft);
+  padding: 3px 10px;
+  border-radius: 999px;
+  margin-bottom: 6px;
+}
+.app-header__title h1{
+  font-size: 22px;
+  letter-spacing: 0.01em;
+}
+
+.app-header__progress{
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.progress-step{
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.progress-step__dot{
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  transition: all .2s ease;
+}
+.progress-step__label{
+  font-size: 12px;
+  color: var(--text-faint);
+  white-space: nowrap;
+  display: none;
+}
+.progress-step__line{
+  width: 22px;
+  height: 2px;
+  background: var(--border-strong);
+}
+.progress-step.is-done .progress-step__dot{
+  background: var(--navy);
+  border-color: var(--navy);
+  color: #fff;
+}
+.progress-step.is-done + .progress-step__line{
+  background: var(--navy);
+}
+.progress-step.is-current .progress-step__dot{
+  background: var(--cyan);
+  border-color: var(--cyan);
+  color: #fff;
+  box-shadow: 0 0 0 4px var(--cyan-soft);
+}
+.progress-step.is-summary .progress-step__dot{
+  border-radius: 8px;
+}
+
+/* ================= メインレイアウト ================= */
+.app-main{
+  max-width: 1280px;
+  margin: 28px auto 110px;
+  padding: 0 32px;
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.panel{
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 22px 24px;
+}
+.panel__head{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.panel__head h2{
+  font-size: 19px;
+}
+.panel__hint{
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.badge{
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--navy);
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+  padding: 4px 12px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+/* ================= ネットワーク図 ================= */
+.diagram-wrap{
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 8px;
+}
+#netSvg{
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.link{
+  fill: none;
+  stroke: #B9C6D4;
+  stroke-width: 3;
+  stroke-linecap: round;
+  transition: stroke .25s ease, stroke-width .25s ease, opacity .25s ease;
+}
+.link.is-active{
+  stroke: var(--cyan);
+  stroke-width: 4;
+}
+.link.is-dim{
+  opacity: 0.25;
+}
+
+.node{
+  transition: opacity .25s ease;
+}
+.node.is-dim{
+  opacity: 0.35;
+}
+
+.node__ring{
+  fill: transparent;
+  stroke: transparent;
+  stroke-width: 3;
+  transition: stroke .25s ease, fill .25s ease;
+}
+.node.is-focus .node__ring{
+  stroke: var(--cyan);
+  fill: var(--cyan-soft);
+}
+.node.is-wrong .node__ring{
+  stroke: var(--error);
+  fill: var(--error-soft);
+}
+
+.pc__screen{ fill: var(--navy); }
+.pc__inner{ fill: #4B6285; }
+.pc__stand{ fill: var(--navy); }
+
+.router__body{ fill: var(--navy); }
+.router__port{ fill: var(--cyan); }
+.router__antenna{ stroke: var(--navy); stroke-width: 3; stroke-linecap: round; }
+
+.cloud{ fill: #CBD7E3; stroke: #AFC0D1; stroke-width: 2; }
+.node--internet.is-focus .cloud{ fill: var(--cyan-soft); stroke: var(--cyan); }
+
+.server__body{ fill: var(--navy); }
+.server__row{ stroke: #7C93B3; stroke-width: 3; stroke-linecap: round; }
+.server__led{ fill: var(--cyan); }
+
+.node__label{
+  font-size: 15px;
+  font-weight: 700;
+  fill: var(--navy);
+}
+.node__ip{
+  font-size: 13px;
+  font-weight: 500;
+  fill: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.node__ip--small{ font-size: 12px; }
+.node__ip.is-highlight{
+  fill: var(--blue);
+  font-weight: 700;
+}
+.node__ip.is-changed{
+  fill: var(--cyan);
+  font-weight: 700;
+}
+
+.packet{
+  fill: var(--cyan);
+  stroke: var(--navy);
+  stroke-width: 1;
+  transition: opacity .15s ease;
+}
+
+/* NATミニパネル */
+.nat-panel{
+  margin-top: 14px;
+  border: 1px solid var(--cyan);
+  background: var(--cyan-soft);
+  border-radius: var(--radius-md);
+  padding: 14px 18px;
+  text-align: center;
+}
+.nat-panel__title{
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: 10px;
+}
+.nat-panel__row{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.nat-tag{
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 999px;
+}
+.nat-tag--before{ background: var(--surface); color: var(--text-muted); border: 1px solid var(--border-strong); }
+.nat-tag--after{ background: var(--navy); color: #fff; }
+.nat-ip{
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--navy-soft);
+  font-variant-numeric: tabular-nums;
+}
+.nat-ip--after{ color: var(--cyan); }
+.nat-panel__arrow{
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 8px 0;
+}
+
+/* ================= 情報カード（送信元/宛先） ================= */
+.info-card{
+  display: grid;
+  gap: 10px;
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px 18px;
+  margin-bottom: 16px;
+}
+.info-row{
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px dashed var(--border-strong);
+}
+.info-row:last-child{ border-bottom: none; }
+.info-row__label{
+  font-size: 13px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.info-row__value{
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--navy);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* ================= 設問カード ================= */
+.question-card__prompt{
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--navy);
+  margin: 0 0 14px;
+}
+.question-card__options{
+  display: grid;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.option-btn{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  padding: 14px 16px;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text);
+  background: var(--surface);
+  border: 2px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: border-color .15s ease, background .15s ease, transform .1s ease;
+}
+.option-btn:hover:not(:disabled){
+  border-color: var(--blue);
+  background: var(--blue-soft);
+}
+.option-btn:focus-visible{
+  outline: 3px solid var(--blue);
+  outline-offset: 2px;
+}
+.option-btn:active:not(:disabled){ transform: scale(0.99); }
+
+.option-btn__marker{
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid var(--border-strong);
+  flex: none;
+}
+
+.option-btn.is-selected{
+  border-color: var(--blue);
+  background: var(--blue-soft);
+}
+.option-btn.is-correct{
+  border-color: var(--success);
+  background: var(--success-soft);
+  color: var(--success);
+}
+.option-btn.is-correct .option-btn__marker{
+  border-color: var(--success);
+  background: var(--success);
+}
+.option-btn.is-wrong{
+  border-color: var(--error);
+  background: var(--error-soft);
+  color: var(--error);
+}
+.option-btn.is-wrong .option-btn__marker{
+  border-color: var(--error);
+  background: var(--error);
+}
+.option-btn:disabled{ cursor: default; }
+.option-btn:disabled:not(.is-correct):not(.is-wrong){ opacity: 0.55; }
+
+.feedback{
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  font-size: 15px;
+  font-weight: 500;
+}
+.feedback.is-correct{
+  background: var(--success-soft);
+  color: var(--success);
+  border: 1px solid #B7E1CB;
+}
+.feedback.is-wrong{
+  background: var(--error-soft);
+  color: var(--error);
+  border: 1px solid #F0BEBE;
+}
+
+/* ================= アクションカード ================= */
+.action-card{
+  margin-bottom: 14px;
+  text-align: center;
+}
+.btn--send{
+  width: 100%;
+  padding: 16px;
+  font-size: 17px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--navy);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background .15s ease, transform .1s ease;
+}
+.btn--send:hover:not(:disabled){ background: var(--navy-soft); }
+.btn--send:active:not(:disabled){ transform: scale(0.99); }
+.btn--send:disabled{ background: var(--border-strong); cursor: default; }
+
+/* ================= 解説カード ================= */
+.explain-card{
+  background: var(--blue-soft);
+  border: 1px solid #C7D8FB;
+  border-radius: var(--radius-md);
+  padding: 16px 18px;
+  font-size: 15px;
+  color: var(--navy);
+  line-height: 1.8;
+}
+.explain-card strong{ color: var(--blue); }
+.explain-card .explain-note{
+  display: block;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed #C7D8FB;
+  font-size: 14px;
+  color: var(--navy-soft);
+}
+.explain-card .flow-list{
+  margin: 8px 0 0;
+  padding-left: 20px;
+}
+.explain-card .flow-list li{ margin-bottom: 4px; }
+.explain-card.is-success{
+  background: var(--success-soft);
+  border-color: #B7E1CB;
+  color: var(--success);
+}
+.explain-card.is-success .flow-list{ color: var(--navy); }
+
+/* ================= まとめ画面 ================= */
+.glossary{
+  display: grid;
+  gap: 10px;
+}
+.glossary-item{
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: border-color .15s ease, background .15s ease;
+}
+.glossary-item:hover, .glossary-item.is-active{
+  border-color: var(--cyan);
+  background: var(--cyan-soft);
+}
+.glossary-item__term{
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--navy);
+}
+.glossary-item__desc{
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 3px;
+}
+
+/* ================= フッター ================= */
+.app-footer{
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: 14px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  z-index: 20;
+}
+.app-footer__nav{
+  display: flex;
+  gap: 10px;
+}
+
+.btn{
+  font-size: 15px;
+  font-weight: 700;
+  padding: 13px 22px;
+  border-radius: var(--radius-md);
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: background .15s ease, border-color .15s ease, opacity .15s ease, transform .1s ease;
+}
+.btn:active:not(:disabled){ transform: scale(0.98); }
+.btn:disabled{ cursor: default; opacity: 0.45; }
+
+.btn--primary{
+  background: var(--blue);
+  color: #fff;
+}
+.btn--primary:hover:not(:disabled){ background: #2559C7; }
+
+.btn--outline{
+  background: var(--surface);
+  color: var(--navy);
+  border-color: var(--border-strong);
+}
+.btn--outline:hover:not(:disabled){ border-color: var(--navy); }
+
+.btn--ghost{
+  background: transparent;
+  color: var(--text-muted);
+  border-color: transparent;
+  text-decoration: underline;
+}
+.btn--ghost:hover{ color: var(--error); }
+
+/* ================= レスポンシブ ================= */
+@media (max-width: 980px){
+  .app-main{
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 700px){
+  .progress-step__label{ display: block; }
+}
+
+@media (prefers-reduced-motion: reduce){
+  *{
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+/* キーボードフォーカス */
+button:focus-visible{
+  outline: 3px solid var(--blue);
+  outline-offset: 2px;
+}
