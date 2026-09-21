@@ -1,28 +1,159 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>NETWORK LAB | 情報Ⅰ ネットワーク構築シミュレータ</title>
-<meta name="description" content="ネットワークをつくって、つないで、確かめる。高校情報ⅠのIPアドレス・サブネット・NAT学習シミュレータ。">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232962e9'/%3E%3Cpath d='M8 23V9l16 14V9' fill='none' stroke='white' stroke-width='3'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="style.css"><script src="script.js" defer></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1180, initial-scale=1.0">
+<title>IPアドレスと通信の仕組み ― 学習アプリ</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header class="header"><a class="brand" href="./index.html" aria-label="NETWORK LAB トップ"><span class="brand-symbol">N</span><span>NETWORK <b>LAB</b><small>ネットワークをつくって、つないで、確かめる</small></span></a><span class="subject">情報Ⅰ <span>/</span> NETWORK SIMULATOR</span><button id="helpButton" class="quiet">使い方</button></header>
-<main>
-<div class="topbar"><nav class="mode-tabs" aria-label="モード"><button data-mode="learn" class="active">学習モード</button><button data-mode="trouble">トラブルシューティング</button><button data-mode="free">自由構築</button></nav><span id="progress" class="progress">0 / 5 MISSION CLEAR</span></div>
-<section class="mission-card" aria-labelledby="missionTitle"><div class="mission-content"><span id="missionLabel" class="eyebrow">MISSION 01</span><h1 id="missionTitle"></h1><p id="missionDescription"></p></div><div class="mission-actions"><div id="missionSteps" class="steps" aria-label="ミッションを選ぶ"></div><div class="mission-navigation"><button id="previous" class="quiet">← 前へ</button><button id="hintButton" class="quiet">◉ ヒント</button><button id="next" class="quiet">次へ →</button></div></div><div id="hint" class="hint" hidden></div></section>
-<div class="workspace">
-<aside class="panel palette"><div class="panel-heading"><h2>デバイス</h2><span class="muted">DEVICES</span></div><p class="helper">追加して、つなげよう。</p><div id="palette"></div><div class="palette-note"><span class="eyebrow">HOW TO BUILD</span><ol><li>デバイスを追加</li><li>「接続」で2台を選択</li><li>アドレスを設定</li><li>通信テストで確認</li></ol><p>機器はドラッグで移動できます。接続線を選ぶと削除できます。</p></div></aside>
-<section class="panel canvas-panel" aria-label="ネットワーク構成"><div class="canvas-toolbar"><div><span class="live-dot"></span><strong>ネットワークキャンバス</strong></div><div class="tools"><button id="connectButton" aria-pressed="false">＋ 接続</button><button id="resetButton" class="quiet">↻ リセット</button></div></div><div id="connectHelp" class="connect-help" hidden>接続する機器を2台選んでください。</div><div class="canvas-scroll"><div id="canvas" class="canvas"><svg id="wires" aria-label="機器の接続線"></svg><div id="nodes"></div><div id="emptyCanvas" class="empty-canvas" hidden>左の「追加」から<br>自分だけのネットワークをつくろう。</div><div id="packet" class="packet" hidden></div></div></div><div class="canvas-footer"><span id="deviceCount"></span><span><i class="legend-line"></i> 接続 <i class="legend-packet"></i> パケット</span></div></section>
-<aside class="panel settings"><div class="panel-heading"><h2>デバイス設定</h2><span class="muted">CONFIG</span></div><div id="settings"></div></aside>
-</div>
-<section class="panel test-panel" aria-labelledby="testTitle"><div class="test-controls"><div class="test-heading"><span class="eyebrow">CONNECTIVITY TEST</span><h2 id="testTitle">通信を確かめる</h2></div><label>送信元<select id="source"></select></label><span class="test-arrow">→</span><label>宛先<select id="destination"></select></label><button id="testButton" class="primary">▷ 通信テスト</button><button id="pauseButton" disabled>一時停止</button><label class="speed-label">速度<select id="speed"><option value="1300">ゆっくり</option><option value="700" selected>標準</option><option value="250">速い</option></select></label></div><div id="result" class="result" role="status" aria-live="polite"><span class="result-icon">↗</span><div><strong>準備ができたら、通信テスト。</strong><p>機器を選択して設定を編集し、通信できるか確かめましょう。</p></div></div><div id="packetInfo" class="packet-info" hidden></div><ol id="trace" class="trace"></ol></section>
-<footer class="footer"><span>NETWORK LAB <b>/</b> 試して、気づいて、理解する。</span><button id="modelButton" class="text-button">このシミュレータの範囲</button></footer>
+
+<!-- ========================= ヘッダー ========================= -->
+<header class="app-header">
+  <div class="header-inner">
+    <div class="header-text">
+      <h1>IPアドレスと通信の仕組み</h1>
+      <p class="header-sub">高校 情報Ⅰ ― 自分のPCから、目的の相手にデータが届くまで</p>
+    </div>
+    <div class="header-badge">体験学習アプリ</div>
+  </div>
+</header>
+
+<!-- ========================= メイン ========================= -->
+<main class="app-main">
+
+  <!-- 進行状況 -->
+  <section class="card progress-card" aria-label="進行状況">
+    <div class="progress-top">
+      <div class="progress-step" id="progressStepText">STEP 1 / 5</div>
+      <div class="progress-scene" id="progressSceneText">宛先を確認する</div>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progressFill"></div>
+      <div class="progress-ticks" id="progressTicks"></div>
+    </div>
+  </section>
+
+  <!-- ネットワーク図 -->
+  <section class="card diagram-card" aria-label="ネットワーク図">
+    <h2 class="card-title">ネットワーク図</h2>
+
+    <div class="diagram-frame">
+      <svg id="networkSvg" viewBox="0 0 900 400" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+
+        <!-- LAN境界 -->
+        <rect id="lanBoundary" class="lan-boundary" x="20" y="40" width="450" height="330" rx="20" ry="20"></rect>
+        <text class="lan-boundary-label" x="40" y="66">LAN内部（192.168.1.0/24）</text>
+
+        <!-- 接続線（機器より先に描画し、下に配置） -->
+        <line id="linePcLanpc" class="conn-line" x1="135" y1="194" x2="135" y2="258"></line>
+        <line id="linePcRouter" class="conn-line" x1="182" y1="140" x2="440" y2="200"></line>
+        <line id="lineRouterInternet" class="conn-line" x1="590" y1="200" x2="637" y2="188"></line>
+        <line id="lineInternetServer" class="conn-line" x1="742" y1="188" x2="800" y2="155"></line>
+
+        <!-- 自分のPC -->
+        <g id="devPc" class="device">
+          <rect class="device-body" x="90" y="110" width="90" height="60" rx="6"></rect>
+          <rect class="device-body-sub" x="125" y="170" width="20" height="14"></rect>
+          <rect class="device-body-sub" x="110" y="184" width="50" height="8" rx="4"></rect>
+          <text class="device-label" x="135" y="212">自分のPC</text>
+          <text class="ip-label" x="135" y="231">192.168.1.10</text>
+        </g>
+
+        <!-- 同じLAN内のPC -->
+        <g id="devLanPc" class="device">
+          <rect class="device-body" x="90" y="260" width="90" height="60" rx="6"></rect>
+          <rect class="device-body-sub" x="125" y="320" width="20" height="14"></rect>
+          <rect class="device-body-sub" x="110" y="334" width="50" height="8" rx="4"></rect>
+          <text class="device-label" x="135" y="362">同じLAN内のPC</text>
+          <text class="ip-label" x="135" y="381">192.168.1.20</text>
+        </g>
+
+        <!-- ルータ -->
+        <g id="devRouter" class="device">
+          <text class="device-label router-title" x="515" y="140">ルータ</text>
+          <rect class="device-body router-body" x="440" y="150" width="150" height="100" rx="14"></rect>
+          <text class="router-icon" x="515" y="209" text-anchor="middle">⇄</text>
+
+          <g id="routerLanSide" class="router-side">
+            <text class="side-label" x="450" y="272">LAN側</text>
+            <text class="ip-label" id="routerLanIp" x="450" y="291">192.168.1.1</text>
+          </g>
+          <g id="routerWanSide" class="router-side">
+            <text class="side-label" x="580" y="272" text-anchor="end">WAN側</text>
+            <text class="ip-label" id="routerWanIp" x="580" y="291" text-anchor="end">203.0.113.10</text>
+          </g>
+        </g>
+
+        <!-- インターネット -->
+        <g id="devInternet" class="device">
+          <path class="cloud-body" d="M650,210 C638,210 628,200 628,188 C628,175 638,167 649,167
+                   C651,153 665,143 682,143 C699,143 712,153 716,168
+                   C730,166 743,176 743,191 C743,205 731,216 716,216 Z"></path>
+          <text class="device-label" x="685" y="238">インターネット</text>
+        </g>
+
+        <!-- Webサーバ -->
+        <g id="devServer" class="device">
+          <rect class="device-body server-body" x="800" y="110" width="70" height="90" rx="8"></rect>
+          <line class="server-line" x1="800" y1="133" x2="870" y2="133"></line>
+          <line class="server-line" x1="800" y1="156" x2="870" y2="156"></line>
+          <line class="server-line" x1="800" y1="179" x2="870" y2="179"></line>
+          <circle class="server-led" cx="812" cy="121" r="3"></circle>
+          <circle class="server-led" cx="812" cy="144" r="3"></circle>
+          <circle class="server-led" cx="812" cy="167" r="3"></circle>
+          <text class="device-label" x="835" y="217">Webサーバ</text>
+          <text class="ip-label" x="835" y="236">198.51.100.20</text>
+        </g>
+
+        <!-- NAT変換ポップアップ（通常は非表示） -->
+        <g id="natPopup" class="nat-popup is-hidden">
+          <rect x="368" y="8" width="290" height="54" rx="12"></rect>
+          <text class="nat-before" x="384" y="41">192.168.1.10</text>
+          <text class="nat-arrow" x="513" y="41" text-anchor="middle">NAT変換</text>
+          <text class="nat-after" x="642" y="41" text-anchor="end">203.0.113.10</text>
+        </g>
+
+        <!-- パケット（移動アニメーションの主役） -->
+        <g id="packet" class="packet is-hidden">
+          <rect x="-12" y="-8" width="24" height="16" rx="4"></rect>
+          <text id="packetLabel" x="0" y="-14" text-anchor="middle"></text>
+        </g>
+
+      </svg>
+    </div>
+
+    <!-- IPアドレスの内訳（サブネットマスクの説明時のみ表示） -->
+    <div class="ip-breakdown is-hidden" id="ipBreakdown">
+      <div class="breakdown-title">IPアドレスの内訳（サブネットマスクで判断する部分）</div>
+      <div class="breakdown-rows" id="breakdownRows"></div>
+      <div class="breakdown-legend">
+        <span class="legend-chip legend-net"></span>ネットワーク部（一致するか確認する部分）
+        <span class="legend-chip legend-host"></span>ホスト部（機器ごとに異なる部分）
+      </div>
+    </div>
+  </section>
+
+  <!-- 問題・解説 -->
+  <section class="card qa-card" aria-label="問題と解説">
+    <div id="qaContent"><!-- JavaScriptにより動的に生成 --></div>
+  </section>
+
+  <!-- 操作パネル -->
+  <div class="controls">
+    <button id="btnRestart" class="btn btn-ghost" type="button">最初からやり直す</button>
+    <div class="controls-right">
+      <button id="btnPrev" class="btn btn-secondary" type="button">← 前へ</button>
+      <button id="btnNext" class="btn btn-primary" type="button" disabled>次へ →</button>
+    </div>
+  </div>
+
 </main>
-<dialog id="connectDialog"><form id="connectForm"><span class="eyebrow">NEW CONNECTION</span><h2>接続するポート</h2><div id="portFields"></div><p class="helper">ルータのLANとWANは異なるネットワークです。</p><div class="dialog-actions"><button type="button" data-close="connectDialog">キャンセル</button><button class="primary" type="submit">接続する</button></div></form></dialog>
-<dialog id="resetDialog"><h2>構成をリセットしますか？</h2><p>現在の設定と配線を、この課題の初期状態に戻します。クリア記録は残ります。</p><div class="dialog-actions"><button data-close="resetDialog">キャンセル</button><button id="confirmReset" class="primary">リセット</button></div></dialog>
-<dialog id="helpDialog"><span class="eyebrow">QUICK GUIDE</span><h2>つくる → つなぐ → 確かめる</h2><ol class="guide"><li>左の「追加」で機器を置きます。機器はドラッグして配置できます。</li><li>「接続」を押し、2台の機器を順に選びます。ルータはLAN／WANを選択します。</li><li>機器を選ぶと右側に設定が開きます。入力後に「設定を保存」を押します。</li><li>送信元と宛先を選び、「通信テスト」。パケットと判定理由を確認しましょう。</li><li>通信が失敗したら、ログやヒントから原因を探して再挑戦します。</li></ol><p>キーボードでも機器を選べます。選択した機器は矢印キーで移動できます。モードやMISSIONを切り替えると、その課題の初期構成になります。</p><div class="dialog-actions"><button class="primary" data-close="helpDialog">はじめる</button></div></dialog>
-<dialog id="modelDialog"><h2>このシミュレータの範囲</h2><p>IPv4のアドレス設定、スイッチによる同一LAN内の通信、ルータの直結経路、NATによる往復通信を学ぶための簡略モデルです。</p><ul class="guide"><li>サブネットマスクは /1〜/30。ネットワーク・ブロードキャストアドレスは機器に設定できません。</li><li>ルータはLAN／WANの2ポート。静的経路・動的ルーティング、DNS、DHCP、IPv6、無線、ファイアウォール、ARPの時間変化は扱いません。</li><li>インターネットは事業者の経路をまとめた機器です。直接接続したサーバとルータWAN間を転送し、サーバ側の事業者ゲートウェイを省略します。</li><li>NATは送信元アドレス変換と、その通信への応答の逆変換を表します。ポート番号とNAPTの多重化は省略します。外部から開始するNAT越しの通信には対応しません。</li><li>203.0.113.0/24 と 198.51.100.0/24 は説明用アドレスです。実際のインターネットで利用できるグローバルIPではありません。</li><li>実際のネットワークへ通信は行いません。設定・クリア記録はこのページを閉じると消えます。</li></ul><div class="dialog-actions"><button class="primary" data-close="modelDialog">閉じる</button></div></dialog>
-<div id="toast" class="toast" role="status" hidden></div>
-</body></html>
+
+<footer class="app-footer">
+  <p>高校「情報Ⅰ」学習教材 ／ IPアドレス・サブネットマスク・デフォルトゲートウェイ・NATの流れを体験します</p>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>
